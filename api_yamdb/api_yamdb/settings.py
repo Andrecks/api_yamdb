@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'api',
     'rest_framework',
     'djoser',
+    'media',
 ]
 
 MIDDLEWARE = [
