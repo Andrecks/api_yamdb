@@ -1,19 +1,24 @@
-from django.shortcuts import render
+# from django.shortcuts import render
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, filters
 from jwt import exceptions
+from . import serializers
 # from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+# from django.contrib.auth.tokens import PasswordResetTokenGenerator
 # from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from .utils import Util
-from django.contrib.sites.shortcuts import get_current_site
-from django.urls import reverse
-import datetime as dt
+from users.permissions import CategoryGenreTitlePermission, ReviewPermission, UserPermission
+# from django.contrib.sites.shortcuts import get_current_site
+# from django.urls import reverse
+# import datetime as dt
 import jwt
 from django.conf import settings
 
@@ -69,3 +74,11 @@ class VerifyEmail(generics.GenericAPIView):
         except jwt.exceptions.exceptions.DecodeError as e:
             return Response({'error': 'Некорректный токен'},
                             status=status.HTTP_400_BAD_REQUEST)
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = serializers.GetUserSerializer
+    permission_classes = (UserPermission,)
+    pagination_class = PageNumberPagination
+    filter_backends = (filters.SearchFilter)
+    search_fields = ('username',)
