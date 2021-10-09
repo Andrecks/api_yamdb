@@ -20,7 +20,7 @@ class Genres(models.Model):
 
 
 class Titles(models.Model):
-    title_name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     description = models.TextField()
     category = models.OneToOneField(
@@ -30,6 +30,7 @@ class Titles(models.Model):
         Genres, null=True, on_delete=models.SET_NULL, related_name='titles'
     )
     year = models.DateTimeField('Год выпуска')
+    rating = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.title_name
@@ -57,7 +58,7 @@ class Comment(models.Model):
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()
-    created = models.DateTimeField(
+    pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
 
     def __str__(self):

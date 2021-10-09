@@ -3,11 +3,11 @@ from . import views
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-# router.register(r'categories', views.CategoriesViewSet),
-# router.register(r'groups', views.GenreViewSet)
-# router.register(r'titles', views.TitleViewSet)
-# router.register(r'titles/(?P<title_id>\d+)/reviews', views.ReviewViewSet, 'reviews')
-# router.register(r'titles/(?P<title_id>\d+)/comments', views.CommentViewSet, 'comments')
+router.register(r'categories', views.CategoriesViewSet)
+router.register(r'genres', views.GenreViewSet)
+router.register(r'titles', views.TitleViewSet)
+router.register(r'titles/(?P<title_id>\d+)/reviews', views.ReviewViewSet, 'reviews')
+router.register(r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments', views.CommentViewSet, 'comments')
 router.register(r'users', views.UserViewSet)
 # router.register(r'follow', FollowViewSet, 'following')
 
