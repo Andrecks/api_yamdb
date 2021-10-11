@@ -4,15 +4,15 @@ from users.models import User
 
 
 class Categories(models.Model):
-    category_name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
 
     def __str__(self):
-        return self.category_name
+        return self.name
 
 
 class Genres(models.Model):
-    genre_name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
 
     def __str__(self):

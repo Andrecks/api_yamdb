@@ -3,6 +3,7 @@ from django.contrib.auth import models
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import viewsets, filters
 from jwt import exceptions
 from . import serializers
@@ -17,7 +18,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from .utils import Util
-from media.models import Categories, Genres, Titles, Review
+from media.models import Categories, Genres, Titles, Review, Comment
 from users.permissions import CategoryGenreTitlePermission, ReviewPermission, UserPermission, CommentPermission
 # from django.contrib.sites.shortcuts import get_current_site
 # from django.urls import reverse
@@ -42,25 +43,20 @@ class SignUpView(generics.GenericAPIView):
             user = User.objects.filter(username=user['username']).get()
             email_body = 'На этот адрес уже был выслан код для активации аккаунта'
             if user.is_verified==True:
-                 return VerifyEmail.send_token(user)
+                token = AccessToken.for_user(user)
+                email_body = user.username+', твой токен: \n' + str(token)
             user_data = request.data
-                # token = RefreshToken.for_user(user).access_token
-                # email_body = user.username+', твой код авторизации: \n' + str(token)
-
-    #RefreshToken.for_user(user).access_token
-        # current_site = get_current_site(request).domain
-        # relative_link = reverse('verify')
-        # absurl = 'http://'+current_site+relative_link+'?token='+str(token)
 
         data = {'email_adress': user.email,
                 'email_body': email_body,
-                'email_subject': 'Your YaMDB Key'}
+                'email_subject': 'Авторизация на YaMDB'}
+
         Util.send_email(data)
 
         return Response(user_data, status=status.HTTP_201_CREATED)
 
 class VerifyEmail(generics.GenericAPIView):
-    pass
+
     def post(self, request):
         token = request.data['token']
         try:
@@ -90,24 +86,27 @@ class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Categories.objects.all()
     serializer_class = serializers.CategorySerializer
     permission_classes = (CategoryGenreTitlePermission,)
+    authentication_classes = (JWTAuthentication,)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
     serializer_class = serializers.GenreSerializer
     permission_classes = (CategoryGenreTitlePermission,)
+    authentication_classes = (JWTAuthentication,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.all()
     serializer_class = serializers.TitleSerializer
     permission_classes = (CategoryGenreTitlePermission,)
-
+    authentication_classes = (JWTAuthentication,)
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ReviewSerializer
     model = Review
     permission_classes = (ReviewPermission,)
+    authentication_classes = (JWTAuthentication,)
 
     def get_queryset(self):
         title = get_object_or_404(Titles, pk=self.kwargs['title_id'])
@@ -121,11 +120,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.CommentSerializer
     permission_classes = (CommentPermission,)
+    model = Comment
+    authentication_classes = (JWTAuthentication,)
 
     def get_queryset(self, *args, **kwargs):
-        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
-        return review.comments.all()
+        review = get_object_or_404(Review, pk=self.kwargs['review_id'])
+        return Comment.objects.filter(rewview=review.pk)
 
     def perform_create(self, serializer):
-        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
-        serializer.save(author=self.request.user, review=review)
+        get_object_or_404(Review, pk=self.kwargs['review_id'])
+        serializer.save(author=self.request.user)

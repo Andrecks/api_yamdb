@@ -8,6 +8,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'username',)
 
+    def validate(self, data):
+        if data['username'] == 'me':
+            raise serializers.ValidationError("me - недопустимый username")
+        return data
+
 class GetUserSerializer(serializers.ModelSerializer):
     
     class Meta:
@@ -40,12 +45,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(slug_field='username', read_only=True)
 
     class Meta:
-        fields = ('id', 'text', 'author', 'score', 'pub_date',)
+        fields = '__all__'
         model = Review
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(slug_field='username', read_only=True)
+    author = serializers.SlugRelatedField(
+        read_only=True, default=serializers.CurrentUserDefault(),
+        slug_field='username')
 
     class Meta:
-        fields = ('id', 'text', 'author', 'pub_date',)
         model = Comment
+        fields = '__all__'
+        extra_kwargs = {'text': {'required': True}}
