@@ -7,22 +7,15 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import viewsets, filters
 from jwt import exceptions
 from . import serializers
-# from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
-# from .serializers import UserSerializer, CategorySerializer, GenreSerializer
-# from django.contrib.auth.tokens import PasswordResetTokenGenerator
-# from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from .utils import Util
 from media.models import Categories, Genres, Titles, Review, Comment
 from users.permissions import CategoryGenreTitlePermission, ReviewPermission, UserPermission, CommentPermission
-# from django.contrib.sites.shortcuts import get_current_site
-# from django.urls import reverse
-# import datetime as dt
 import jwt
 from django.conf import settings
 
