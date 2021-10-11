@@ -6,11 +6,11 @@ class CategoryGenreTitlePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return bool((request.method in permissions.SAFE_METHODS)
-                    or (request.user.role is 'admin')
+                    or (request.user.role == 'admin')
                     or (request.user.is_superuser))
 
     def has_object_permission(self, request, view, obj):
-        if ((request.user.role is 'admin')
+        if ((request.user.role == 'admin')
             or (request.user.is_superuser)):
             return True
         raise PermissionDenied('Удалять категории, жанры и тайтлы могут только админы')
@@ -32,7 +32,7 @@ class ReviewPermission(permissions.BasePermission):
 class UserPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        return bool((request.user.role is 'admin')
+        return bool((request.user.role == 'admin')
                     or (request.user.is_superuser))
     
 
