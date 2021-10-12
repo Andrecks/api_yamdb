@@ -23,11 +23,11 @@ class Titles(models.Model):
     year = datetime.now().year
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=1000, null=True, blank=True)
-    category = models.ForeignKey(
-        Categories, null=True, on_delete=models.SET_NULL, related_name='categories'
-    )
     genre = models.ManyToManyField(
-        Genres, blank=True, verbose_name='Жанр'
+        Genres,
+        blank=True,
+        related_name='titles',
+        verbose_name='Жанр'
     )
     year = models.IntegerField('Год выпуска', 
                                validators=[MaxValueValidator(year)])
