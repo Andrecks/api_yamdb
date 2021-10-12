@@ -1,10 +1,10 @@
-# from django.shortcuts import render
+# from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import models
 # from rest_framework import pagination
 from django.db.models import Avg
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -17,7 +17,10 @@ from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from .utils import Util
 from media.models import Categories, Genres, Titles, Review, Comment
-from users.permissions import CategoryGenreTitlePermission, ReviewPermission, UserPermission, CommentPermission
+from users.permissions import IsAdmin
+from users.permissions import (
+    IsAdminOrReadOnly, IsAuthorOrNotSimpleUserReadOnly
+)
 import jwt
 from django.conf import settings
 
@@ -75,7 +78,7 @@ class VerifyEmail(generics.GenericAPIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = serializers.GetUserSerializer
-    permission_classes = (UserPermission,)
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
@@ -84,27 +87,24 @@ class UserViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Categories.objects.all()
     serializer_class = serializers.CategorySerializer
-    permission_classes = (CategoryGenreTitlePermission,)
+    permission_classes = (IsAdminOrReadOnly,)
     authentication_classes = (JWTAuthentication,)
-    pagination_class = PageNumberPagination
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
     serializer_class = serializers.GenreSerializer
-    permission_classes = (CategoryGenreTitlePermission,)
+    permission_classes = (IsAdminOrReadOnly,)
     authentication_classes = (JWTAuthentication,)
-    pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ['name', ]
+    search_fields = ['name',]
     lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.annotate(rating=Avg("reviews__score"))
-    permission_classes = (CategoryGenreTitlePermission,)
+    permission_classes = (IsAdminOrReadOnly,)
     authentication_classes = (JWTAuthentication,)
-    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         actions = ['create', 'partial_update']
@@ -115,7 +115,10 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ReviewSerializer
     model = Review
-    permission_classes = (ReviewPermission,)
+    permission_classes = (
+        IsAuthenticatedOrReadOnly,
+        IsAuthorOrNotSimpleUserReadOnly,
+    )
     authentication_classes = (JWTAuthentication,)
     pagination_class = PageNumberPagination
 
@@ -130,7 +133,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.CommentSerializer
-    permission_classes = (CommentPermission,)
+    permission_classes = (
+        IsAuthenticatedOrReadOnly,
+        IsAuthorOrNotSimpleUserReadOnly,
+    )
     model = Comment
     authentication_classes = (JWTAuthentication,)
     pagination_class = PageNumberPagination

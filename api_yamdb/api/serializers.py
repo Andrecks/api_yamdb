@@ -33,7 +33,7 @@ class CategorySerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'lookup_field': 'slug'}
         }
-        model = Genres
+        model = Categories
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -44,7 +44,7 @@ class GenreSerializer(serializers.ModelSerializer):
             'url': {'lookup_field': 'slug'}
         }
         model = Genres
-        fields = '__all__'
+        fields = ('name', 'slug',)
         lookup_field = 'slug'
 
 

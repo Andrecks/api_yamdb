@@ -2,20 +2,23 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser
 
+USER = 'user'
+MODERATOR = 'moderator'
+ADMIN = 'admin'
+
+ROLES = [
+    (USER, 'user'),
+    (MODERATOR, 'moderator'),
+    (ADMIN, 'admin')
+]
+
 class User(AbstractUser):
-    ROLES = (
-
-        ('user', 'user'),
-        ('moderator', 'moderator'),
-        ('admin', 'admin'),
-
-    )
     email = models.EmailField(unique=True, blank=False)
     bio = models.TextField(
         'Биография',
         blank=True,
     )
-    role = models.CharField(max_length=50, choices=ROLES, default='user')
+    role = models.CharField(max_length=50, choices=ROLES, default=USER)
     is_superuser = models.BooleanField(_('superuser status'),
                                        default=False)
     is_verified = models.BooleanField(default=False)

@@ -24,9 +24,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users',
     'api',
+    'media',
     'rest_framework',
     'djoser',
-    'media',
 ]
 
 MIDDLEWARE = [
@@ -122,14 +122,14 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny', 
     ],
 
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    ),
 
     'DEFAULT_PAGINATION_CLASS':
-        'rest_framework.pagination.PageNumberPagination',
+        'rest_framework.pagination.LimitOffsetPagination',
     
-    'PAGE_SIZE': 5,
+    'PAGE_SIZE': 10,
 }
 
 
