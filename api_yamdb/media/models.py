@@ -22,17 +22,15 @@ class Genres(models.Model):
 class Titles(models.Model):
     year = datetime.now().year
     name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True)
-    description = models.CharField(max_length=1000)
-    category = models.OneToOneField(
-        Categories, null=True, on_delete=models.SET_NULL, related_name='titles'
+    description = models.CharField(max_length=1000, null=True, blank=True)
+    category = models.ForeignKey(
+        Categories, null=True, on_delete=models.SET_NULL, related_name='categories'
     )
     genre = models.ManyToManyField(
-        Genres, verbose_name='Жанр'
+        Genres, blank=True, verbose_name='Жанр'
     )
     year = models.IntegerField('Год выпуска', 
                                validators=[MaxValueValidator(year)])
-    rating = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.title_name

@@ -1,6 +1,7 @@
 # from django.shortcuts import render
 from django.contrib.auth import models
 # from rest_framework import pagination
+from django.db.models import Avg
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -94,12 +95,16 @@ class GenreViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Titles.objects.all()
-    serializer_class = serializers.TitleSerializer
+    queryset = Titles.objects.annotate(rating=Avg("reviews__score"))
     permission_classes = (CategoryGenreTitlePermission,)
     authentication_classes = (JWTAuthentication,)
     pagination_class = PageNumberPagination
 
+    def get_serializer_class(self):
+        actions = ['create', 'partial_update']
+        if self.action in actions:
+            return serializers.PostTitleSerializer
+        return serializers.GetTitleSerializer
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ReviewSerializer
@@ -126,7 +131,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self, *args, **kwargs):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])
-        return Comment.objects.filter(rewview=review.pk)
+        return Comment.objects.filter(review=review.pk)
 
     def perform_create(self, serializer):
         get_object_or_404(Review, pk=self.kwargs['review_id'])
