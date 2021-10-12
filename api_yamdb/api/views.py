@@ -1,11 +1,12 @@
 # from django.shortcuts import render
 from django.contrib.auth import models
-from rest_framework import pagination
+# from rest_framework import pagination
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, mixins
 from jwt import exceptions
 from . import serializers
 from rest_framework import generics
@@ -19,6 +20,12 @@ from media.models import Categories, Genres, Titles, Review, Comment
 from users.permissions import CategoryGenreTitlePermission, ReviewPermission, UserPermission, CommentPermission
 import jwt
 from django.conf import settings
+
+
+class RetrieveUpdate(mixins.UpdateModelMixin, mixins.RetrieveModelMixin,
+                     viewsets.GenericViewSet):
+    pass
+
 
 class SignUpView(generics.GenericAPIView):
     serializer_class = serializers.UserSerializer
@@ -129,3 +136,22 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         get_object_or_404(Review, pk=self.kwargs['review_id'])
         serializer.save(author=self.request.user)
+
+
+class UserMeView(APIView):
+    def get(self, request):
+        if request.user.is_authenticated:
+            user = get_object_or_404(User, id=request.user.id)
+            serializer = serializers.UserMeSerializer(user)
+            return Response(serializer.data)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def patch(self, request):
+        if request.user.is_authenticated:
+            user = get_object_or_404(User, id=request.user.id)
+            serializer = serializers.UserMeSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)

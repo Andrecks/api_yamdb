@@ -57,3 +57,12 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = '__all__'
         extra_kwargs = {'text': {'required': True}}
+
+
+class UserMeSerializer(serializers.ModelSerializer):
+
+    role = serializers.CharField(read_only=True, default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'username', 'bio', 'email', 'role',)
