@@ -1,5 +1,6 @@
 # from django.shortcuts import render
 from django.contrib.auth import models
+from rest_framework import pagination
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -80,13 +81,14 @@ class CategoriesViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.CategorySerializer
     permission_classes = (CategoryGenreTitlePermission,)
     authentication_classes = (JWTAuthentication,)
-
+    pagination_class = PageNumberPagination
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
     serializer_class = serializers.GenreSerializer
     permission_classes = (CategoryGenreTitlePermission,)
     authentication_classes = (JWTAuthentication,)
+    pagination_class = PageNumberPagination
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -94,12 +96,15 @@ class TitleViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.TitleSerializer
     permission_classes = (CategoryGenreTitlePermission,)
     authentication_classes = (JWTAuthentication,)
+    pagination_class = PageNumberPagination
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ReviewSerializer
     model = Review
     permission_classes = (ReviewPermission,)
     authentication_classes = (JWTAuthentication,)
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         title = get_object_or_404(Titles, pk=self.kwargs['title_id'])
@@ -115,6 +120,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (CommentPermission,)
     model = Comment
     authentication_classes = (JWTAuthentication,)
+    pagination_class = PageNumberPagination
 
     def get_queryset(self, *args, **kwargs):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])
