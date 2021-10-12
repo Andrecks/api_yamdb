@@ -2,24 +2,28 @@ from media.models import Categories, Genres, Titles, Review, Comment
 from users.models import User
 from rest_framework import serializers
 
+
 class UserSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = User
         fields = ('email', 'username',)
+        lookup_field = 'username'
 
     def validate(self, data):
         if data['username'] == 'me':
             raise serializers.ValidationError("me - недопустимый username")
         return data
 
+
 class GetUserSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = User
         fields = ('username', 'email',
                   'first_name', 'last_name',
                   'bio', 'role',)
+
 
 class CategorySerializer(serializers.ModelSerializer):
 
@@ -40,29 +44,9 @@ class GenreSerializer(serializers.ModelSerializer):
             'url': {'lookup_field': 'slug'}
         }
         model = Genres
+        fields = '__all__'
+        lookup_field = 'slug'
 
-# class CategoryField(serializers.SlugRelatedField):
-#     def to_representation(self, value):
-#         serializer = CategorySerializer(value)
-#         return serializer.data
-
-
-# class GenreField(serializers.SlugRelatedField):
-#     def to_representation(self, value):
-#         serializer = GenreSerializer(value)
-#         return serializer.data
-
-# class TitleSerializer(serializers.ModelSerializer):
-#     genre = serializers.SlugRelatedField(
-#         queryset=Genres.objects.all(), slug_field="slug", many=True
-#     )
-#     category = serializers.SlugRelatedField(
-#         queryset=Categories.objects.all(), slug_field="slug"
-#     )
-#     
-#     class Meta:
-#         fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category',)
-#         model = Titles
 
 class GetTitleSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False)
@@ -103,8 +87,10 @@ class PostTitleSerializer(GetTitleSerializer):
             "category",
         )
 
+
 class ReviewSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(slug_field='username', read_only=True)
+    author = serializers.SlugRelatedField(
+        slug_field='username', read_only=True)
 
     class Meta:
         fields = '__all__'
