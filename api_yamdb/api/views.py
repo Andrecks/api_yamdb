@@ -1,18 +1,17 @@
 # from django.shortcuts import render
 from django.contrib.auth import models
 # from rest_framework import pagination
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import viewsets, filters, mixins
-from jwt import exceptions
 from . import serializers
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from .utils import Util
@@ -31,21 +30,22 @@ class SignUpView(generics.GenericAPIView):
     serializer_class = serializers.UserSerializer
     
     def post(self, request):
-        user = request.data
-        if not User.objects.filter(username=user['username']).exists():
-            serializer = self.serializer_class(data=user)
+        user_data = request.data
+        if not User.objects.filter(username=user_data['username']).exists():
+            serializer = self.serializer_class(data=user_data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            user_data = serializer.data
+            # user_data = serializer.data
             user = User.objects.get(email=user_data['email'])
-            token = RefreshToken.for_user(user)
-            email_body = user.username+', твой код активации аккаунта: \n' + str(token)
+            token = default_token_generator.make_token(user)
         else:
-            user = User.objects.filter(username=user['username']).get()
+            user = User.objects.filter(username=user_data['username']).get()
+            token = default_token_generator.make_token(user)
+        email_body = user.username+', твой код активации аккаунта: \n' + str(token)
+        if user.is_verified==True:
             email_body = 'На этот адрес уже был выслан код для активации аккаунта'
-            if user.is_verified==True:
-                token = AccessToken.for_user(user)
-                email_body = user.username+', твой токен: \n' + str(token)
+            # token = AccessToken.for_user(user)
+            # email_body = user.username+', твой токен: \n' + str(token)
             user_data = request.data
 
         data = {'email_adress': user.email,
@@ -60,26 +60,19 @@ class VerifyEmail(generics.GenericAPIView):
 
     def post(self, request):
         token = request.data['token']
-        try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
-            user = User.objects.get(id=payload['user_id'])
+        user = get_object_or_404(User, username=request.data['username'])
+        if default_token_generator.check_token(user, token):
             if not user.is_verified:
                 user.is_verified = True
-                token = AccessToken.for_user(user)
                 user.save()
+            token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
-        except jwt.ExpiredSignatureError as e:
-            return Response({'error': 'Ваш токен устарел'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        except jwt.exceptions.exceptions.DecodeError as e:
-            return Response({'error': 'Некорректный токен'},
-                            status=status.HTTP_400_BAD_REQUEST)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = serializers.GetUserSerializer
     permission_classes = (UserPermission,)
-    filter_backends = (filters.SearchFilter)
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
 
 
@@ -96,7 +89,9 @@ class GenreViewSet(viewsets.ModelViewSet):
     permission_classes = (CategoryGenreTitlePermission,)
     authentication_classes = (JWTAuthentication,)
     pagination_class = PageNumberPagination
-
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ['name', ]
+    lookup_field = 'slug'
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.all()
@@ -136,7 +131,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         get_object_or_404(Review, pk=self.kwargs['review_id'])
         serializer.save(author=self.request.user)
-
 
 class UserMeView(APIView):
     def get(self, request):

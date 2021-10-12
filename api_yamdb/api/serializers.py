@@ -24,8 +24,12 @@ class GetUserSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Categories
-        fields = '__all__'
+        fields = ('name', 'slug',)
+        lookup_field = 'slug'
+        extra_kwargs = {
+            'url': {'lookup_field': 'slug'}
+        }
+        model = Genres
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -34,11 +38,28 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genres
         fields = '__all__'
 
-class TitleSerializer(serializers.ModelSerializer):
+# class CategoryField(serializers.SlugRelatedField):
+#     def to_representation(self, value):
+#         serializer = CategorySerializer(value)
+#         return serializer.data
 
+
+# class GenreField(serializers.SlugRelatedField):
+#     def to_representation(self, value):
+#         serializer = GenreSerializer(value)
+#         return serializer.data
+
+class TitleSerializer(serializers.ModelSerializer):
+    genre = serializers.SlugRelatedField(
+        queryset=Genres.objects.all(), slug_field="slug", many=True
+    )
+    category = serializers.SlugRelatedField(
+        queryset=Categories.objects.all(), slug_field="slug"
+    )
+    description = serializers.CharField(required=False)
     class Meta:
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category',)
         model = Titles
-        fields = '__all__'
 
 
 class ReviewSerializer(serializers.ModelSerializer):

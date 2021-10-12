@@ -7,9 +7,11 @@ from rest_framework.exceptions import PermissionDenied
 class CategoryGenreTitlePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        return bool((request.method in permissions.SAFE_METHODS)
-                    or (request.user.role == 'admin')
-                    or (request.user.is_superuser))
+        if request.user.is_authenticated:
+            return bool((request.user.role == 'admin')
+                        or (request.user.is_superuser))
+        else:
+            return bool(request.method in permissions.SAFE_METHODS)
 
     def has_object_permission(self, request, view, obj):
         if ((request.user.role == 'admin')
