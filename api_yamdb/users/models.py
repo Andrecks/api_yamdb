@@ -15,7 +15,7 @@ class User(AbstractUser):
         'Биография',
         blank=True,
     )
-    role = models.CharField(max_length=50, choices = ROLES, default='user')
+    role = models.CharField(max_length=50, choices=ROLES, default='user')
     is_superuser = models.BooleanField(_('superuser status'),
                                        default=False)
     is_verified = models.BooleanField(default=False)

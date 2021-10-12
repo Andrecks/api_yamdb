@@ -28,7 +28,7 @@ class RetrieveUpdate(mixins.UpdateModelMixin, mixins.RetrieveModelMixin,
 
 class SignUpView(generics.GenericAPIView):
     serializer_class = serializers.UserSerializer
-    
+
     def post(self, request):
         user_data = request.data
         if not User.objects.filter(username=user_data['username']).exists():
@@ -39,10 +39,11 @@ class SignUpView(generics.GenericAPIView):
             user = User.objects.get(email=user_data['email'])
             token = default_token_generator.make_token(user)
         else:
-            user = User.objects.filter(username=user_data['username']).get()
-            token = default_token_generator.make_token(user)
-        email_body = user.username+', твой код активации аккаунта: \n' + str(token)
-        if user.is_verified==True:
+            # user = User.objects.filter(username=user_data['username']).get()
+            # token = default_token_generator.make_token(user)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        email_body = user.username + ', твой код активации аккаунта: \n' + str(token)
+        if user.is_verified == True:
             email_body = 'На этот адрес уже был выслан код для активации аккаунта'
             # token = AccessToken.for_user(user)
             # email_body = user.username+', твой токен: \n' + str(token)
@@ -54,7 +55,8 @@ class SignUpView(generics.GenericAPIView):
 
         Util.send_email(data)
 
-        return Response(user_data, status=status.HTTP_201_CREATED)
+        return Response(user_data, status=status.HTTP_200_OK)
+
 
 class VerifyEmail(generics.GenericAPIView):
 
@@ -68,12 +70,14 @@ class VerifyEmail(generics.GenericAPIView):
             token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
 
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = serializers.GetUserSerializer
     permission_classes = (UserPermission,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
+    lookup_field = 'username'
 
 
 class CategoriesViewSet(viewsets.ModelViewSet):
@@ -82,6 +86,7 @@ class CategoriesViewSet(viewsets.ModelViewSet):
     permission_classes = (CategoryGenreTitlePermission,)
     authentication_classes = (JWTAuthentication,)
     pagination_class = PageNumberPagination
+
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
@@ -92,6 +97,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ['name', ]
     lookup_field = 'slug'
+
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Titles.objects.all()
@@ -132,6 +138,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         get_object_or_404(Review, pk=self.kwargs['review_id'])
         serializer.save(author=self.request.user)
 
+
 class UserMeView(APIView):
     def get(self, request):
         if request.user.is_authenticated:
@@ -143,9 +150,11 @@ class UserMeView(APIView):
     def patch(self, request):
         if request.user.is_authenticated:
             user = get_object_or_404(User, id=request.user.id)
-            serializer = serializers.UserMeSerializer(user, data=request.data, partial=True)
+            serializer = serializers.UserMeSerializer(
+                user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
