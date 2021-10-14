@@ -1,6 +1,7 @@
-from media.models import Categories, Genres, Titles, Review, Comment
-from users.models import User
+from media.models import Categories, Comment, Genres
 from rest_framework import serializers
+from reviews.models import Review, Title
+from users.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -14,6 +15,11 @@ class UserSerializer(serializers.ModelSerializer):
         if data['username'] == 'me':
             raise serializers.ValidationError("me - недопустимый username")
         return data
+
+
+class UserTokenSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
 
 class GetUserSerializer(serializers.ModelSerializer):
@@ -64,7 +70,7 @@ class GetTitleSerializer(serializers.ModelSerializer):
             "genre",
             "category",
         )
-        model = Titles
+        model = Title
 
 
 class PostTitleSerializer(GetTitleSerializer):
@@ -77,7 +83,7 @@ class PostTitleSerializer(GetTitleSerializer):
     )
 
     class Meta:
-        model = Titles
+        model = Title
         fields = (
             "id",
             "name",
@@ -90,28 +96,45 @@ class PostTitleSerializer(GetTitleSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        slug_field='username', read_only=True)
+        slug_field='username', read_only=True
+    )
+
+    def validate(self, data):
+        if self.context['request'].method != 'POST':
+            return data
+        user = self.context['request'].user
+        title_id = (
+            self.context['request'].parser_context['kwargs']['title_id']
+        )
+        if Review.objects.filter(author=user, title__id=title_id).exists():
+            raise serializers.ValidationError(
+                "Вы уже оставили отзыв на данное произведение")
+        return data
 
     class Meta:
-        fields = '__all__'
         model = Review
+        fields = '__all__'
+        extra_kwargs = {'title': {'required': False}}
 
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True, default=serializers.CurrentUserDefault(),
-        slug_field='username')
+        slug_field='username',
+        read_only=True
+    )
 
     class Meta:
         model = Comment
-        fields = '__all__'
-        extra_kwargs = {'text': {'required': True}}
+        fields = ('id', 'text', 'author', 'pub_date',)
 
 
 class UserMeSerializer(serializers.ModelSerializer):
 
-    role = serializers.CharField(read_only=True, default=serializers.CurrentUserDefault())
+    role = serializers.CharField(read_only=True,
+                                 default=serializers.CurrentUserDefault())
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'bio', 'email', 'role',)
+        fields = ('first_name', 'last_name',
+                  'username', 'bio', 'email',
+                  'role',)

@@ -1,3 +1,4 @@
 # api_yamdb
 api_yamdb
-blahblahblah
+Next review goals:
+    1: Fill the readme file

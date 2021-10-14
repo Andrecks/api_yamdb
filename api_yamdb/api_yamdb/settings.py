@@ -25,7 +25,9 @@ INSTALLED_APPS = [
     'users',
     'api',
     'media',
+    'reviews',
     'rest_framework',
+    'django_filters',
     'djoser',
 ]
 

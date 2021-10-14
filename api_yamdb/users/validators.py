@@ -1,5 +1,6 @@
 from django.core import validators
 
+
 class UnicodeUsernameValidator(validators.RegexValidator):
     regex = r'^[\w.@+-]+$'
     message = (

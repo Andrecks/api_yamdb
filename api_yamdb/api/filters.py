@@ -1,23 +1,13 @@
-import django_filters as filters
+from django_filters import rest_framework as filters
+from reviews.models import Title
 
-from media.models import Categories, Genres, Titles
 
-
-class TitlesFilter(filters.FilterSet):
-    genre = filters.ModelChoiceFilter(
-        field_name='genre__slug',
-        to_field_name='slug',
-        queryset=Genres.objects.all()
-    )
-
-    category = filters.ModelChoiceFilter(
-        field_name='category__slug',
-        to_field_name='slug',
-        queryset=Categories.objects.all()
-    )
-
+class TitleFilter(filters.FilterSet):
+    category = filters.CharFilter(field_name='category__slug')
+    genre = filters.CharFilter(field_name='genre__slug')
     name = filters.CharFilter(field_name='name', lookup_expr='icontains')
+    year = filters.NumberFilter(field_name='year')
 
     class Meta:
-        model = Titles
-        fields = ('genre', 'category', 'year', 'name')
+        model = Title
+        fields = ('category', 'genre', 'year', 'name')
