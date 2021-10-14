@@ -39,7 +39,7 @@ class SignUpView(generics.GenericAPIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         email_body = (f'{user.username}, твой код активации аккаунта:'
-                      + {str(token)})
+                      + str(token))
 
         if user.is_verified is True:
             email_body = 'На этот адрес уже был выслан код активации аккаунта'
