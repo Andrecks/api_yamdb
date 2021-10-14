@@ -14,7 +14,8 @@ cur.execute("""CREATE TABLE IF NOT EXISTS titles (
 with open('titles.csv', 'r', encoding="utf-8") as f:
     dr = csv.DictReader(f, delimiter=";")
     to_db = [(i['name'], i['year'], i['category']) for i in dr]
+string = "INSERT INTO titles (name, year, category) VALUES (?, ?, ?);"
 
-cur.executemany("INSERT INTO titles (name, year, category) VALUES (?, ?, ?);", to_db)
+cur.executemany(string, to_db)
 con.commit()
 con.close()
