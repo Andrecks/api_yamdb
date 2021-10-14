@@ -12,6 +12,7 @@ ROLES = [
     (ADMIN, 'admin')
 ]
 
+
 class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False)
     bio = models.TextField(
