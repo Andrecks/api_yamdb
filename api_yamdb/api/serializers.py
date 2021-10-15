@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if data['username'] == 'me':
-            raise serializers.ValidationError("me - недопустимый username")
+            raise serializers.ValidationError('me - недопустимый username')
         return data
 
 
@@ -62,13 +62,13 @@ class GetTitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = (
-            "id",
-            "name",
-            "year",
-            "rating",
-            "description",
-            "genre",
-            "category",
+            'id',
+            'name',
+            'year',
+            'rating',
+            'description',
+            'genre',
+            'category',
         )
         model = Title
 
@@ -76,21 +76,21 @@ class GetTitleSerializer(serializers.ModelSerializer):
 class PostTitleSerializer(GetTitleSerializer):
     description = serializers.CharField(required=False)
     genre = serializers.SlugRelatedField(
-        queryset=Genres.objects.all(), slug_field="slug", many=True
+        queryset=Genres.objects.all(), slug_field='slug', many=True
     )
     category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(), slug_field="slug"
+        queryset=Category.objects.all(), slug_field='slug'
     )
 
     class Meta:
         model = Title
         fields = (
-            "id",
-            "name",
-            "year",
-            "description",
-            "genre",
-            "category",
+            'id',
+            'name',
+            'year',
+            'description',
+            'genre',
+            'category',
         )
 
 
@@ -108,7 +108,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         )
         if Review.objects.filter(author=user, title__id=title_id).exists():
             raise serializers.ValidationError(
-                "Вы уже оставили отзыв на данное произведение")
+                'Вы уже оставили отзыв на данное произведение')
         return data
 
     class Meta:
