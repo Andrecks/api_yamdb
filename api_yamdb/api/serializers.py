@@ -1,4 +1,4 @@
-from media.models import Categories, Comment, Genres
+from media.models import Category, Comment, Genres
 from rest_framework import serializers
 from reviews.models import Review, Title
 from users.models import User
@@ -39,7 +39,7 @@ class CategorySerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'lookup_field': 'slug'}
         }
-        model = Categories
+        model = Category
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -79,7 +79,7 @@ class PostTitleSerializer(GetTitleSerializer):
         queryset=Genres.objects.all(), slug_field="slug", many=True
     )
     category = serializers.SlugRelatedField(
-        queryset=Categories.objects.all(), slug_field="slug"
+        queryset=Category.objects.all(), slug_field="slug"
     )
 
     class Meta:

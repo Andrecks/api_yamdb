@@ -2,11 +2,12 @@ from django.contrib.auth.tokens import default_token_generator
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from media.models import Categories, Genres
-from rest_framework import filters, generics, mixins, status, viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from media.models import Category, Genres
+from rest_framework import filters, generics, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Review, Title
@@ -17,6 +18,7 @@ from users.permissions import (GenreCategoryPermission, IsAdmin,
 
 from . import serializers
 from .filters import TitleFilter
+from .mixins import GenreCategoryMixin
 from .utils import Util
 
 
@@ -26,25 +28,19 @@ class SignUpView(generics.GenericAPIView):
     def post(self, request):
         user_data = request.data
         serializer = self.serializer_class(data=user_data)
-        if serializer.is_valid():
-            username = user_data['username']
-            if not User.objects.filter(username=username).exists():
-                serializer.save()
-                user = User.objects.get(email=user_data['email'])
-                token = default_token_generator.make_token(user)
-            else:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data['username']
+        if not User.objects.filter(username=username).exists():
+            serializer.save()
+            user = User.objects.get(email=user_data['email'])
+            token = default_token_generator.make_token(user)
         else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         email_body = (f'{user.username}, твой код активации аккаунта:'
                       + str(token))
-
         if user.is_verified is True:
             email_body = 'На этот адрес уже был выслан код активации аккаунта'
-            # token = AccessToken.for_user(user)
-            # email_body = user.username+', твой токен: \n' + str(token)
             user_data = request.data
 
         data = {'email_adress': user.email,
@@ -69,11 +65,9 @@ class VerifyEmail(generics.GenericAPIView):
                 token = AccessToken.for_user(user)
                 return Response({'token': str(token)},
                                 status=status.HTTP_200_OK)
-            else:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -84,18 +78,28 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'username'
 
-
-class GenreCategoryMixin(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
-    pass
+    @action(detail=False, methods=['get', 'patch'],
+            permission_classes=[IsAuthenticated])
+    def me(self, request):
+        if request.method == 'get':
+            if request.user.is_authenticated:
+                serializer = serializers.UserMeSerializer(request.user)
+                return Response(serializer.data)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        if request.user.is_authenticated:
+            user = get_object_or_404(User, id=request.user.id)
+            serializer = serializers.UserMeSerializer(
+                user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 class CategoriesViewSet(GenreCategoryMixin):
-    queryset = Categories.objects.all()
+    queryset = Category.objects.all()
     serializer_class = serializers.CategorySerializer
     permission_classes = (GenreCategoryPermission,)
     authentication_classes = (JWTAuthentication,)
@@ -115,7 +119,7 @@ class GenreViewSet(GenreCategoryMixin):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.annotate(rating=Avg("reviews__score"))
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
     permission_classes = (IsAdminOrReadOnly,)
     authentication_classes = (JWTAuthentication,)
     filter_backends = (DjangoFilterBackend,)
@@ -136,12 +140,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
     )
 
     def get_queryset(self):
-        title = get_object_or_404(
-            Title.objects.prefetch_related('reviews'),
-            id=self.kwargs.get('title_id')
-        )
-        reviews = Review.objects.filter(title=title).all()
-        return reviews
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        return title.reviews.all()
 
     def perform_create(self, serializer):
         title = get_object_or_404(
@@ -149,27 +150,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
             id=self.kwargs.get('title_id')
         )
         serializer.save(author=self.request.user, title=title)
-
-
-class UserMeView(APIView):
-    def get(self, request):
-        if request.user.is_authenticated:
-            user = get_object_or_404(User, id=request.user.id)
-            serializer = serializers.UserMeSerializer(user)
-            return Response(serializer.data)
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
-
-    def patch(self, request):
-        if request.user.is_authenticated:
-            user = get_object_or_404(User, id=request.user.id)
-            serializer = serializers.UserMeSerializer(
-                user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

@@ -1,12 +1,20 @@
 from datetime import datetime
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from users.models import User
 
 
+def my_year_validator(value):
+    if value > datetime.now().year:
+        raise ValidationError(
+            ('Будущее (пока что) не наступило'),
+            params={'value': value},
+        )
+
+
 class Title(models.Model):
-    year = datetime.now().year
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=1000, null=True, blank=True)
     genre = models.ManyToManyField(
@@ -15,16 +23,16 @@ class Title(models.Model):
         related_name='titles',
     )
     category = models.ForeignKey(
-        'media.Categories',
+        'media.Category',
         on_delete=models.SET_NULL,
         related_name='titles',
         null=True,
     )
     year = models.IntegerField('Год выпуска',
-                               validators=[MaxValueValidator(year)])
+                               validators=[my_year_validator])
 
     def __str__(self):
-        return self.title_name
+        return self.name
 
 
 class Review(models.Model):
